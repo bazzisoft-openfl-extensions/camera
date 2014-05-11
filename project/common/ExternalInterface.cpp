@@ -15,11 +15,11 @@ using namespace camera;
 
 
 
-static value camera_capture_photo(value maxPixelSize, value jpegQuality) 
+static value camera_capture_photo(value maxPixelSize, value jpegQuality, value cameraOverlayFile) 
 {
-    return alloc_bool(CapturePhoto(val_int(maxPixelSize), (float)val_float(jpegQuality)));
+    return alloc_bool(CapturePhoto(val_int(maxPixelSize), (float)val_float(jpegQuality), val_string(cameraOverlayFile)));
 }
-DEFINE_PRIM(camera_capture_photo, 2);
+DEFINE_PRIM(camera_capture_photo, 3);
 
 
 

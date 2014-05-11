@@ -5,7 +5,7 @@
 namespace camera 
 {
     void Initialize();
-    bool CapturePhoto(int maxPixelSize, float jpegQuality);
+    bool CapturePhoto(int maxPixelSize, float jpegQuality, const char* cameraOverlayFile);
 }
 
 

@@ -10,7 +10,8 @@ Camera
 
 - Simulates a camera event from provided `BitmapData` for non-mobile platforms.
 
-- *TODO*: Allows placing a `BitmapData` overlay over the built-in camera display.
+- Allows placing a `BitmapData` overlay over the built-in camera display.
+    - *TODO*: Implement overlay in Android.
 
 
 Acknowledgements
@@ -50,9 +51,9 @@ Usage
     
     class Main extends Sprite
     {
-    	public function new()
+        public function new()
         {
-    		super();
+            super();
 
             Camera.Initialize();
 
@@ -64,6 +65,9 @@ Usage
             Camera.SetFakePhotoResult(Assets.getBitmapData("assets/mySimulatedPhoto.jpg"));
             #end
 
+            // Show this PNG over the top of the native camera view
+            Camera.SetCameraOverlayImage(Assets.getBitmapData("assets/img/camera-overlay.png"));
+            
             // Take photo, limit max possible size to 1024x1024, JPEG quality 0.9
             Camera.CapturePhoto(1024, 0.9);
 

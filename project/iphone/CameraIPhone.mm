@@ -12,7 +12,7 @@
 {
 }
 - (id)initWithView:(UIViewController*)view;
-- (BOOL)capturePhotoWithMaxSize:(int)maxSize jpegQuality:(float)jpegQuality;
+- (BOOL)capturePhotoWithMaxSize:(int)maxSize jpegQuality:(float)jpegQuality cameraOverlayFile:(NSString*)cameraOverlayFile;
 @end
 
 @implementation CameraControllerAndDelegate
@@ -21,9 +21,11 @@
     UIViewController* m_view;
     UIImagePickerController* m_imagePickerController;
     UIPopoverController* m_popoverController;
+    BOOL m_hasCameraOverlay;
     int m_capturePhotoMaxSize;
     float m_capturePhotoJpegQuality;
 }
+
 
 - (id)initWithView:(UIViewController*)view
 {
@@ -37,13 +39,15 @@
     return self;
 }
 
-- (BOOL)capturePhotoWithMaxSize:(int)maxSize jpegQuality:(float)jpegQuality
+
+- (BOOL)capturePhotoWithMaxSize:(int)maxSize jpegQuality:(float)jpegQuality cameraOverlayFile:(NSString*)cameraOverlayFile
 {
-    m_capturePhotoMaxSize = maxSize;
-    m_capturePhotoJpegQuality = jpegQuality;
-    
     // Allow creator to release if they want to 
     [self retain];
+    
+    m_capturePhotoMaxSize = maxSize;
+    m_capturePhotoJpegQuality = jpegQuality;   
+    m_hasCameraOverlay = NO;
 
     UIImagePickerControllerSourceType sourceType;
     
@@ -73,9 +77,16 @@
         m_imagePickerController.cameraDevice = UIImagePickerControllerCameraDeviceRear;
         m_imagePickerController.showsCameraControls = YES;
         
-        // Setup camera overlay view
-        //m_imagePickerController.cameraOverlayView = ...
-        //https://developer.apple.com/library/ios/documentation/uikit/reference/UIImagePickerController_Class/UIImagePickerController/UIImagePickerController.html#//apple_ref/doc/uid/TP40007070-CH3-SW19        
+        // Setup camera overlay view if requested
+        if (cameraOverlayFile != nil)
+        {
+            m_hasCameraOverlay = YES;
+            UIImage* overlayImage = [UIImage imageWithContentsOfFile:cameraOverlayFile];
+            UIImageView* overlayView = [[[UIImageView alloc] initWithImage:overlayImage] autorelease];
+            overlayView.opaque = NO;
+            overlayView.contentMode = UIViewContentModeScaleAspectFit;
+            m_imagePickerController.cameraOverlayView = overlayView;
+        }
     }
     
     // If the sourceType isn't the camera, then use the popover to present
@@ -93,11 +104,37 @@
         [m_view presentViewController:m_imagePickerController animated:YES completion:nil];
     }    
     
+    // Register for orientation changes to adjust the overlay image
+    [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(orientationChanged:)
+                                                 name:@"UIDeviceOrientationDidChangeNotification" 
+                                               object:nil];
+    [self orientationChanged:nil];
+    
     return YES;
 }
 
+
+- (void)orientationChanged:(NSNotification *)notification
+{
+    UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
+    
+    if (m_hasCameraOverlay)
+    {
+        CGRect transformedFrame = CGRectApplyAffineTransform(m_imagePickerController.view.frame, m_imagePickerController.view.transform);        
+        transformedFrame.origin.x = 0.0f;
+        transformedFrame.origin.y = 0.0f;
+        m_imagePickerController.cameraOverlayView.frame = transformedFrame;
+    }
+}
+
+
 - (void)dismissCameraViews
 {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+    
     if (m_popoverController != nil)
     {
         [m_popoverController dismissPopoverAnimated:YES];
@@ -115,10 +152,12 @@
     [self release];
 }
 
+
 - (void)popoverControllerDidDismissPopover:(UIPopoverController*)popoverController
 {
     [self imagePickerControllerDidCancel:m_imagePickerController];
 }
+
 
 - (void)imagePickerController:(UIImagePickerController*)picker didFinishPickingMediaWithInfo:(NSDictionary*)info
 {
@@ -139,19 +178,19 @@
     
     // Write to JPEG
     int dataLength;
+    FILE* tempFile;
     const void* data = extensionkit::iphone::UIImageAsJPEGBytes(photo, &dataLength, m_capturePhotoJpegQuality);    
-    char tempFilePath[1024] = "";
-    FILE* tempFile = extensionkit::CreateTemporaryFile(tempFilePath);
+    const char* tempFilePath = extensionkit::CreateTemporaryFile(&tempFile);
     
-    if (tempFile != NULL)
+    if (tempFilePath != NULL)
     {
-        printf("Camera: Writing JPEG (%d bytes)\n", dataLength);
+        printf("Camera: Writing JPEG (%d bytes) to %s\n", dataLength, tempFilePath);
         fwrite(data, 1, dataLength, tempFile);
         fclose(tempFile);
     }
     else
     {
-        printf("Camera: ERROR! Unable to create temporary FILE '%s'\n", tempFilePath);
+        printf("Camera: ERROR! Unable to create temporary file.\n");
     }
 
     // raise an OpenFL event CameraEvent.PHOTO_CAPTURED
@@ -164,6 +203,7 @@
     
     [self dismissCameraViews];
 }
+
 
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker
 {
@@ -206,15 +246,22 @@ namespace camera
                 "I@:@@");
         }
 
-        bool CapturePhoto(int maxPixelSize, float jpegQuality)
+        bool CapturePhoto(int maxPixelSize, float jpegQuality, const char* cameraOverlayFile)
         {
             // Get our topmost view controller
             UIViewController* topViewController = [[UIApplication sharedApplication] keyWindow].rootViewController;
 
+            // Convert camera overlay to NSString
+            NSString* cameraOverlay = nil;
+            
+            if (cameraOverlayFile != NULL)
+            {
+                cameraOverlay = [NSString stringWithUTF8String:cameraOverlayFile];
+            }
+            
             // Create our camera+delegate object that will trigger the camera view
-            CameraControllerAndDelegate* cameraController = [[CameraControllerAndDelegate alloc] initWithView:topViewController];
-            BOOL ret = [cameraController capturePhotoWithMaxSize:maxPixelSize jpegQuality:jpegQuality];
-            [cameraController release];
+            CameraControllerAndDelegate* cameraController = [[[CameraControllerAndDelegate alloc] initWithView:topViewController] autorelease];
+            BOOL ret = [cameraController capturePhotoWithMaxSize:maxPixelSize jpegQuality:jpegQuality cameraOverlayFile:cameraOverlay];
             
             return ret;
         }

@@ -7,7 +7,7 @@ namespace camera
     namespace iphone
     {
         void InitializeIPhone();
-        bool CapturePhoto(int maxPixelSize, float jpegQuality);
+        bool CapturePhoto(int maxPixelSize, float jpegQuality, const char* cameraOverlayFile);
     }
 }
 

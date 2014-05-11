@@ -1,10 +1,7 @@
 package camera.event;
+import camera.utils.ImageUtils;
 import flash.display.BitmapData;
-import flash.display.JPEGEncoderOptions;
 import flash.events.Event;
-import flash.geom.Rectangle;
-import flash.utils.ByteArray;
-import haxe.crypto.Base64;
 import haxe.io.Bytes;
 
 #if !flash
@@ -74,7 +71,7 @@ class CameraEvent extends Event
         }
         else if (m_bitmapData != null)
         {
-            m_imageData = ConvertBitmapDataToImageData(m_bitmapData);
+            m_imageData = ImageUtils.ConvertBitmapDataToImageData(m_bitmapData, ImageUtils.FORMAT_JPEG, 0.9);
             return m_imageData;
         }
         else
@@ -91,48 +88,12 @@ class CameraEvent extends Event
         }
         else if (m_imageData != null)
         {
-            m_bitmapData = ConvertImageDataToBitmapData(m_imageData);
+            m_bitmapData = ImageUtils.ConvertImageDataToBitmapData(m_imageData);
             return m_bitmapData;
         }
         else
         {
             return null;
         }
-    }
-    
-    private static function ConvertBitmapDataToImageData(bitmapData:BitmapData) : Bytes
-    {
-        var imageData:ByteArray;
-        
-        #if flash11_3
-        
-        imageData = bitmapData.encode(new Rectangle(0, 0, bitmapData.width, bitmapData.height), new JPEGEncoderOptions(90));
-        return Bytes.ofData(imageData);
-        
-        #elseif flash
-        
-        throw "Unable to convert from BitmapData to JPEG/PNG Bytes in Flash < 11.3. Try <app swf-version=\"11.3\"/>";
-        
-        #else
-        
-        imageData = bitmapData.encode("jpg", 0.9);
-        return cast(imageData, Bytes);
-        
-        #end
-    }
-    
-    private static function ConvertImageDataToBitmapData(imageData:Bytes) : BitmapData
-    {
-        #if flash        		
-		var bytes:ByteArray = imageData.getData();
-        #else        
-        var bytes:ByteArray = ByteArray.fromBytes(imageData);
-        #end        
-		
-        #if flash
-        throw "Unable to convert from JPEG Bytes to BitmapData synchronously in flash.";
-        #else
-        return BitmapData.loadFromBytes(bytes);
-        #end
     }
 }
