@@ -1,0 +1,43 @@
+<xml>
+    
+    <include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+    
+    <files id="common">
+        
+        <compilerflag value="-Iinclude"/>
+        
+        <file name="common/ExternalInterface.cpp"/>
+        <file name="common/Camera.cpp"/>
+        
+    </files>
+    
+	<files id="iphone">
+
+        <compilerflag value="-Iinclude"/>
+        <compilerflag value="-I../../extensionkit/project/include"/>
+        <file name="iphone/CameraIPhone.mm"/>
+
+	</files>    
+    
+    <set name="SLIBEXT" value=".lib" if="windows"/>
+    <set name="SLIBEXT" value=".a" unless="windows"/>
+    <set name="SLIBEXT" value=".so" if="webos"/>
+    
+    <set name="DEBUGEXTRA" value="-debug" if="fulldebug" />
+    
+    <target id="NDLL" output="${LIBPREFIX}camera${MSVC_LIB_VERSION}${DEBUGEXTRA}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+        
+        <outdir name="../ndll/${BINDIR}"/>
+        <ext value=".ndll" if="windows || mac || linux"/>
+        <files id="common"/>
+        <files id="iphone" if="iphone"/>
+        
+    </target>
+    
+    <target id="default">
+        
+        <target id="NDLL"/>
+        
+    </target>
+    
+</xml>

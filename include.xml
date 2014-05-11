@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+    
+    <ndll name="camera" />
+    
+    <!-- Use the following for an Android Java extension, not needed otherwise -->
+    
+    <dependency name="camera" path="dependencies/android" if="android" />
+    <android extension="org.haxe.extension.camera.Camera" />
+
+    <dependency name="MobileCoreServices.framework" if="ios" />
+    
+    <include path="../extensionkit" />
+    
+</project>
