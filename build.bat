@@ -1,9 +1,6 @@
 @echo off
-rem call lime rebuild . windows -debug
-rem call lime rebuild . windows -clean
-
-call lime rebuild . flash -clean
-call lime rebuild . windows -clean
-call lime rebuild . android -clean
-
+call lime rebuild . windows -debug %*
+call lime rebuild . windows %*
+call lime rebuild . android -debug %*
+call lime rebuild . android %*
 pause
