@@ -1,11 +1,13 @@
 package camera.utils;
 import flash.display.BitmapData;
-import flash.display.JPEGEncoderOptions;
-import flash.display.PNGEncoderOptions;
 import flash.geom.Rectangle;
 import flash.utils.ByteArray;
 import haxe.io.Bytes;
 
+#if flash11_3
+import flash.display.JPEGEncoderOptions;
+import flash.display.PNGEncoderOptions;
+#end
 
 class ImageUtils
 {
