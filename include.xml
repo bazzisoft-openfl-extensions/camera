@@ -10,6 +10,4 @@
 
     <dependency name="MobileCoreServices.framework" if="ios" />
     
-    <include path="../extensionkit" />
-    
 </project>

@@ -44,6 +44,7 @@ Usage
 
 ### project.xml
 
+    <include path="/path/to/extensionkit" />
     <include path="/path/to/camera" />
 
 
