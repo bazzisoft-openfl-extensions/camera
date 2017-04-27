@@ -56,23 +56,29 @@ public class Camera extends org.haxe.extension.Extension
         {
             if (resultCode == Activity.RESULT_OK)
             {
-                ImageUtils.Dimensions dimensions = ImageUtils.GetBitmapFileDimensions(s_imageTempFile);
-                Trace.Info(String.format("Camera: Captured photo %d x %d (%d bytes)", dimensions.width, dimensions.height, s_imageTempFile.length()));
-                
-                if (ImageUtils.ClampDimensionsToMaxSize(dimensions, s_maxImagePixelSize))
+            	ImageUtils.Dimensions dimensions = new ImageUtils.Dimensions(0, 0);
+            	
+                try
                 {
-                    try
+                    Bitmap tmpBitmap = ImageUtils.LoadBitmapFromFile(s_imageTempFile);
+                	dimensions = new ImageUtils.Dimensions(tmpBitmap);
+                    Trace.Info(String.format("Camera: Captured photo %d x %d (%d bytes)", tmpBitmap.getWidth(), tmpBitmap.getHeight(), s_imageTempFile.length()));
+                    
+                    tmpBitmap = ImageUtils.RotateBitmapToOrientationUp(tmpBitmap, s_imageTempFile);
+                    Trace.Info(String.format("Camera: After rotation: %d x %d", tmpBitmap.getWidth(), tmpBitmap.getHeight()));
+                    
+                    if (ImageUtils.ClampDimensionsToMaxSize(dimensions, s_maxImagePixelSize))
                     {
-                        Bitmap tmpBitmap = ImageUtils.LoadBitmapFromFile(s_imageTempFile);
-                        tmpBitmap = ImageUtils.ResizeBitmap(tmpBitmap, dimensions.width, dimensions.height);
-                        ImageUtils.SaveBitmapAsJPEG(tmpBitmap, s_imageTempFile, s_jpegQuality);
-                        
-                        Trace.Info(String.format("Camera: Resized photo to %d x %d (%d bytes)", dimensions.width, dimensions.height, s_imageTempFile.length()));
+                    	tmpBitmap = ImageUtils.ResizeBitmap(tmpBitmap, dimensions.width, dimensions.height);
+                    	Trace.Info(String.format("Camera: Resized photo to %d x %d", dimensions.width, dimensions.height));
                     }
-                    catch (IOException e)
-                    {
-                        Trace.Error("Camera: Unable to resize photo: " + e.toString());
-                    }
+                    
+                    ImageUtils.SaveBitmapAsJPEG(tmpBitmap, s_imageTempFile, s_jpegQuality);
+                    Trace.Info(String.format("Camera: Final image size is %d bytes", s_imageTempFile.length()));
+                }
+                catch (IOException e)
+                {
+                    Trace.Error("Camera: Unable to resize photo: " + e.toString());
                 }
 
                 HaxeCallback.DispatchEventToHaxe("camera.event.CameraEvent",
