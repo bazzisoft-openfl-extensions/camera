@@ -1,0 +1,31 @@
+buildscript {
+	repositories {
+		maven {
+			url "http://repo1.maven.org/maven2/"
+		}
+	}
+	
+	dependencies {
+		classpath 'com.android.tools.build:gradle:::ANDROID_GRADLE_PLUGIN::'
+	}
+}
+
+apply plugin: 'com.android.library'
+
+android {
+	compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
+	buildToolsVersion project.ANDROID_BUILD_TOOLS_VERSION
+	
+	sourceSets {
+		main {
+			manifest.srcFile 'AndroidManifest.xml'
+			java.srcDirs = ['src']
+		}
+	}
+}
+
+dependencies {
+	compile project(':deps:extension-api')
+	compile project(':deps:extensionkit')
+}
+
