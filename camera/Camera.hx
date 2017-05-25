@@ -11,8 +11,8 @@ import cpp.Lib;
 import neko.Lib;
 #end
 
-#if (android && openfl)
-import openfl.utils.JNI;
+#if android
+import lime.system.JNI;
 #end
 
 #if !flash
